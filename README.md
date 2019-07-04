@@ -77,6 +77,9 @@ There are currently 3 options to run Metorikku.
 * Download the [last released Standalone JAR](https://github.com/YotpoLtd/metorikku/releases/latest)
 * Run the following command:
 `java -Dspark.master=local[*] -cp metorikku-standalone.jar com.yotpo.metorikku.Metorikku -c config.yaml`
+* Also job in a JSON format is supported, run following command:
+`java -Dspark.master=local[*] -cp metorikku-standalone.jar com.yotpo.metorikku.Metorikku --job "{*}"`
+ 
 
 #### Run as a library
 *It's also possible to use Metorikku inside your own software*
@@ -187,22 +190,7 @@ SELECT keyColumn, to_json(struct(*)) AS valueColumn FROM table
 ##### Optional Parameters:
 * **keyColumn** - key that can be used to perform de-duplication when reading 
 
-#### Kafka Input
-Kafka input allows reading messages from topics
-```yaml
-inputs:
-  testStream:
-    kafka:
-      servers:
-        - 127.0.0.1:9092
-      topic: test
-      consumerGroup: testConsumerGroupID # optional
-      schemaRegistryUrl: https://schema-registry-url # optional
-      schemaSubject: subject # optional
-```
-Using Kafka input will convert your application into a streaming application build on top of Spark Structured Streaming.
-
-When using kafka input, writing is only available to ```File``` and ```Kafka```, and only to a single output.
+### Streaming Input
 
 To enable all other writers and also enable multiple outputs for a single streaming dataframe, add ```batchMode``` to your job configuration, this will enable the [foreachBatch](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#using-foreach-and-foreachbatch) mode (only available in spark >= 2.4.0)
 Check out all possible streaming configurations in the ```streaming``` section of the [sample job configuration file](config/job_config_sample.yaml).
@@ -222,6 +210,22 @@ Please note the following while using streaming applications:
 
 * For more information please go to [Spark Structured Streaming WIKI](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html)
 
+#### Kafka Input
+Kafka input allows reading messages from topics
+```yaml
+inputs:
+  testStream:
+    kafka:
+      servers:
+        - 127.0.0.1:9092
+      topic: test
+      consumerGroup: testConsumerGroupID # optional
+      schemaRegistryUrl: https://schema-registry-url # optional
+      schemaSubject: subject # optional
+```
+Using Kafka input will convert your application into a streaming application build on top of Spark Structured Streaming.
+
+When using kafka input, writing is only available to ```File``` and ```Kafka```, and only to a single output.
 * In order to measure your consumer lag you can use the ```consumerGroup``` parameter to track your application offsets against your kafka input.
 This will commit the offsets to kafka, as a new dummy consumer group.
 
@@ -259,6 +263,22 @@ You can use watermarking by adding a new udf step in your metric:
     eventTime: event
     delayThreshold: 2 hours
 ```
+
+##### File Streaming Input
+Metorikku supports loading streaming Data from external storage systems. 
+You can use the Data stream reading by specifying ```isStream: true```, 
+and a specific path in the job (must be a single path) as a streaming source, this will trigger jobs for new files added to the folder.
+```yaml
+inputs:
+  testStream:
+    file:
+      path: examples/file_input_stream/input
+      isStream: true
+      format: json
+      options:
+        timestampFormat: "yyyy-MM-dd'T'HH:mm:ss'Z'"
+```
+
 
 #### Instrumentation
 One of the most useful features in Metorikku is it's instrumentation capabilities.
